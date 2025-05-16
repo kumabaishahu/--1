@@ -21,11 +21,11 @@
             <span>我的工作台</span>
           </template>
           <el-menu-item-group v-if="currentRole === 'manager'">
-            <el-menu-item index="usermanagement">用户管理</el-menu-item>
-            <el-menu-item index="2-2">课程管理</el-menu-item>
-            <el-menu-item index="2-3">学习记录</el-menu-item>
-            <el-menu-item index="2-4">数据统计</el-menu-item>
-            <el-menu-item index="2-5">系统维护</el-menu-item>
+            <el-menu-item index="user_management">用户管理</el-menu-item>
+            <el-menu-item index="course_management">课程管理</el-menu-item>
+            <el-menu-item index="study_record">学习记录</el-menu-item>
+            <el-menu-item index="data_statistic">数据统计</el-menu-item>
+            <el-menu-item index="system_mantainance">系统维护</el-menu-item>
           </el-menu-item-group>
           <el-menu-item-group v-else>
             <el-menu-item index="2-6">培训计划</el-menu-item>
@@ -45,10 +45,11 @@
         <span class="header-title">{{ currentMenuTitle }}</span>
       </el-header>
 
-      <el-main class="main">
-        <transition name="fade" mode="out-in">
-          <component :is="currentComponent"></component>
-        </transition>
+      <el-main style="background-color: #ffffff;">
+        <!--路由占位符-->
+        <router-view v-slot="{ Component }">
+          <component :is="Component" />
+        </router-view>
       </el-main>
     </el-container>
   </el-container>
@@ -62,6 +63,7 @@ import CourseManagement from './CourseManagement.vue'
 const currentRole = ref('manager')
 const activeMenu = ref('2-2')
 const currentComponent = ref(null)
+const currentPage = ref(1)
 
 const currentMenuTitle = computed(() => {
   switch (activeMenu.value) {
@@ -85,6 +87,11 @@ const handleRoleChange = () => {
     activeMenu.value = currentRole.value === 'manager' ? '2-1' : '2-6'
     handleMenuSelect(activeMenu.value)
   }
+}
+
+const handlePageChange = (page) => {
+  currentPage.value = page
+  // 这里可以添加页面切换的逻辑
 }
 
 onMounted(() => {

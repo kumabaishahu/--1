@@ -6,29 +6,21 @@ const routes = [
   {
     path: '/',
     name: 'root',
-    redirect: "/homepage",
-    props: {
-      msg: 'Hello Vue 3 + Element Plus'
-    }
+    redirect: "/homepage"
   },
   {
     path: '/homepage',
     name: 'homepage',
     component: HomePage,
-    props: {
-      msg: 'Hello World Page'
-    },
     children: [
       {
-        path: '/usermanagement',
-        name: 'usermanagement',
+        path: '/user_management',
+        name: 'user_management',
         component: UserManagement
-      }
-    ],
-    children:[
+      },
       {
-        path: '/coursemanagement',
-        name: 'coursemanagement',
+        path: '/course_management',
+        name: 'course_management',
         component: CourseManagement
       }
     ]
