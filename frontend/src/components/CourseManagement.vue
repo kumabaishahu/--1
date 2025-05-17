@@ -1,188 +1,313 @@
 <template>
-  <div class="course-management">
-    <el-steps :active="activeStep" finish-status="success" class="mb-4">
-      <el-step title="上传课程"></el-step>
-      <el-step title="编辑内容"></el-step>
-      <el-step title="发布设置"></el-step>
-      <el-step title="课程列表"></el-step>
-    </el-steps>
-
-    <!-- 上传课程 -->
-    <div v-if="activeStep === 0" class="step-content">
-      <el-upload
-        class="upload-demo"
-        drag
-        action="/api/course/upload"
-        :on-success="handleUploadSuccess"
-        :on-error="handleUploadError"
-      >
-        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-        <div class="el-upload__text">
-          拖拽文件到此处或 <em>点击上传</em>
+  <div class="course-management-container">
+    <el-card class="page-card">
+      <template #header>
+        <div class="card-header">
+          <h2>课程管理</h2>
+          <el-button type="primary" @click="handleAdd">
+            <el-icon><Plus /></el-icon>添加课程
+          </el-button>
         </div>
-        <template #tip>
-          <div class="el-upload__tip">支持上传PPT、PDF、Word等格式文件</div>
-        </template>
-      </el-upload>
-    </div>
+      </template>
+      
+      <div class="card-content">
+        <!-- 搜索栏 -->
+        <div class="search-bar">
+          <el-input
+            v-model="searchQuery"
+            placeholder="搜索课程"
+            class="search-input"
+            clearable
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+        </div>
 
-    <!-- 编辑内容 -->
-    <div v-if="activeStep === 1" class="step-content">
-      <el-form :model="courseForm" label-width="120px">
-        <el-form-item label="课程名称">
-          <el-input v-model="courseForm.name"></el-input>
+        <!-- 课程列表 -->
+        <el-table
+          :data="tableData"
+          style="width: 100%"
+          border
+          v-loading="loading"
+        >
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column prop="name" label="课程名称" />
+          <el-table-column prop="category" label="分类" width="120" />
+          <el-table-column prop="instructor" label="讲师" width="120" />
+          <el-table-column prop="duration" label="时长" width="100" />
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 'active' ? 'success' : 'info'">
+                {{ row.status === 'active' ? '进行中' : '已结束' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button-group>
+                <el-button type="primary" link @click="handleEdit(row)">
+                  编辑
+                </el-button>
+                <el-button type="primary" link @click="handleView(row)">
+                  查看
+                </el-button>
+                <el-button 
+                  type="danger" 
+                  link 
+                  @click="handleDelete(row)"
+                >
+                  删除
+                </el-button>
+              </el-button-group>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 分页 -->
+        <div class="pagination-container">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
+      </div>
+    </el-card>
+
+    <!-- 课程表单对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogType === 'add' ? '添加课程' : '编辑课程'"
+      width="500px"
+    >
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="80px"
+      >
+        <el-form-item label="课程名称" prop="name">
+          <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item label="课程描述">
-          <el-input type="textarea" v-model="courseForm.description"></el-input>
-        </el-form-item>
-        <el-form-item label="课程分类">
-          <el-select v-model="courseForm.category">
-            <el-option label="技术培训" value="tech"></el-option>
-            <el-option label="管理培训" value="management"></el-option>
-            <el-option label="通用技能" value="general"></el-option>
+        <el-form-item label="分类" prop="category">
+          <el-select v-model="form.category" placeholder="请选择分类">
+            <el-option label="技术课程" value="tech" />
+            <el-option label="管理课程" value="management" />
+            <el-option label="通用课程" value="general" />
           </el-select>
         </el-form-item>
-      </el-form>
-    </div>
-
-    <!-- 发布设置 -->
-    <div v-if="activeStep === 2" class="step-content">
-      <el-form :model="publishForm" label-width="120px">
-        <el-form-item label="发布时间">
-          <el-date-picker v-model="publishForm.publishDate" type="datetime"></el-date-picker>
+        <el-form-item label="讲师" prop="instructor">
+          <el-input v-model="form.instructor" />
         </el-form-item>
-        <el-form-item label="学习时限">
-          <el-input-number v-model="publishForm.duration" :min="1"></el-input-number>
-          <span class="ml-2">天</span>
+        <el-form-item label="时长" prop="duration">
+          <el-input-number v-model="form.duration" :min="1" :max="100" />
         </el-form-item>
-        <el-form-item label="可见范围">
-          <el-radio-group v-model="publishForm.visibility">
-            <el-radio label="all">所有人可见</el-radio>
-            <el-radio label="department">指定部门</el-radio>
-          </el-radio-group>
+        <el-form-item label="状态" prop="status">
+          <el-switch
+            v-model="form.status"
+            :active-value="'active'"
+            :inactive-value="'inactive'"
+          />
         </el-form-item>
       </el-form>
-    </div>
-
-    <!-- 课程列表 -->
-    <div v-if="activeStep === 3" class="step-content">
-      <el-table :data="courseList" style="width: 100%">
-        <el-table-column prop="name" label="课程名称"></el-table-column>
-        <el-table-column prop="category" label="分类"></el-table-column>
-        <el-table-column prop="publishDate" label="发布时间"></el-table-column>
-        <el-table-column prop="status" label="状态"></el-table-column>
-        <el-table-column label="操作">
-          <template #default="scope">
-            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-
-    <div class="step-actions">
-      <el-button v-if="activeStep > 0" @click="previousStep">上一步</el-button>
-      <el-button v-if="activeStep < 3" type="primary" @click="nextStep">下一步</el-button>
-      <el-button v-if="activeStep === 3" type="success" @click="finishProcess">完成</el-button>
-    </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSubmit">
+            确定
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
-<script>
-import { ref, reactive } from 'vue'
-import { UploadFilled } from '@element-plus/icons-vue'
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import { Plus, Search } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
-export default {
-  name: 'CourseManagement',
-  components: {
-    UploadFilled
-  },
-  setup() {
-    const activeStep = ref(0)
-    const courseForm = reactive({
-      name: '',
-      description: '',
-      category: ''
-    })
-    const publishForm = reactive({
-      publishDate: '',
-      duration: 7,
-      visibility: 'all'
-    })
-    const courseList = ref([])
+// 数据
+const loading = ref(false)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const dialogVisible = ref(false)
+const dialogType = ref('add')
+const formRef = ref(null)
 
-    const nextStep = () => {
-      if (activeStep.value < 3) activeStep.value++
-    }
+// 表单数据
+const form = reactive({
+  name: '',
+  category: '',
+  instructor: '',
+  duration: 1,
+  status: 'active'
+})
 
-    const previousStep = () => {
-      if (activeStep.value > 0) activeStep.value--
-    }
-
-    const handleUploadSuccess = (response) => {
-      // 处理上传成功
-      nextStep()
-    }
-
-    const handleUploadError = (error) => {
-      // 处理上传失败
-      console.error('Upload failed:', error)
-    }
-
-    const handleEdit = (row) => {
-      // 处理编辑操作
-    }
-
-    const handleDelete = (row) => {
-      // 处理删除操作
-    }
-
-    const finishProcess = () => {
-      // 完成整个流程
-    }
-
-    return {
-      activeStep,
-      courseForm,
-      publishForm,
-      courseList,
-      nextStep,
-      previousStep,
-      handleUploadSuccess,
-      handleUploadError,
-      handleEdit,
-      handleDelete,
-      finishProcess
-    }
-  }
+// 表单验证规则
+const rules = {
+  name: [
+    { required: true, message: '请输入课程名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  category: [
+    { required: true, message: '请选择分类', trigger: 'change' }
+  ],
+  instructor: [
+    { required: true, message: '请输入讲师姓名', trigger: 'blur' }
+  ],
+  duration: [
+    { required: true, message: '请输入课程时长', trigger: 'change' }
+  ]
 }
+
+// 模拟数据
+const tableData = ref([
+  {
+    id: 1,
+    name: 'Vue.js 高级教程',
+    category: '技术课程',
+    instructor: '张老师',
+    duration: 40,
+    status: 'active'
+  },
+  {
+    id: 2,
+    name: '项目管理实战',
+    category: '管理课程',
+    instructor: '李老师',
+    duration: 30,
+    status: 'active'
+  }
+])
+
+// 方法
+const handleSearch = () => {
+  // 实现搜索逻辑
+  console.log('搜索:', searchQuery.value)
+}
+
+const handleAdd = () => {
+  dialogType.value = 'add'
+  dialogVisible.value = true
+  // 重置表单
+  Object.assign(form, {
+    name: '',
+    category: '',
+    instructor: '',
+    duration: 1,
+    status: 'active'
+  })
+}
+
+const handleEdit = (row) => {
+  dialogType.value = 'edit'
+  dialogVisible.value = true
+  // 填充表单数据
+  Object.assign(form, row)
+}
+
+const handleView = (row) => {
+  // 实现查看课程详情逻辑
+  console.log('查看课程:', row)
+}
+
+const handleDelete = (row) => {
+  ElMessageBox.confirm(
+    '确定要删除该课程吗？',
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    // 实现删除逻辑
+    ElMessage.success('删除成功')
+  })
+}
+
+const handleSubmit = async () => {
+  if (!formRef.value) return
+  
+  await formRef.value.validate((valid) => {
+    if (valid) {
+      // 实现提交逻辑
+      ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功')
+      dialogVisible.value = false
+    }
+  })
+}
+
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  // 重新加载数据
+}
+
+const handleCurrentChange = (val) => {
+  currentPage.value = val
+  // 重新加载数据
+}
+
+onMounted(() => {
+  // 初始化加载数据
+})
 </script>
 
 <style scoped>
-.course-management {
+.course-management-container {
   padding: 20px;
 }
 
-.step-content {
-  margin: 20px 0;
-  min-height: 300px;
+.page-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-.step-actions {
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #2c3e50;
+}
+
+.card-content {
+  min-height: 400px;
+}
+
+.search-bar {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.search-input {
+  width: 300px;
+}
+
+.pagination-container {
   margin-top: 20px;
-  text-align: right;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.mb-4 {
-  margin-bottom: 1.5rem;
-}
-
-.ml-2 {
-  margin-left: 0.5rem;
-}
-
-.upload-demo {
-  width: 360px;
-  margin: 0 auto;
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 </style>
