@@ -31,7 +31,7 @@ const routes = [
         path: 'user-management',
         name: 'UserManagement',
         component: () => import('../components/UserManagement.vue'),
-        meta: { keepAlive: true }
+        meta: { keepAlive: true } // 设置keepAlive为true表示该组件会被缓存,避免重复渲染,提升性能
       },
       {
         path: 'course-management',

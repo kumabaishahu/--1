@@ -10,16 +10,15 @@
           clearable
         />
       </div>
-      
       <div class="contact-tabs">
-        <el-tabs v-model="activeTab">
+        <el-tabs v-model="activeTab" class="centered-tabs" style="padding-left: 16px">
           <el-tab-pane label="最近联系" name="recent">
             <div class="contact-item" 
                  v-for="contact in recentContacts" 
                  :key="contact.id"
                  :class="{ active: currentContact?.id === contact.id }"
                  @click="selectContact(contact)">
-              <el-avatar :size="40" :src="contact.avatar" />
+              <el-avatar :size="40" :src="defaultAvatar" />
               <div class="contact-info">
                 <div class="contact-name">{{ contact.name }}</div>
                 <div class="contact-message">{{ contact.lastMessage }}</div>
@@ -36,7 +35,7 @@
                  :key="contact.id"
                  :class="{ active: currentContact?.id === contact.id }"
                  @click="selectContact(contact)">
-              <el-avatar :size="40" :src="contact.avatar" />
+              <el-avatar :size="40" :src="defaultAvatar" />
               <div class="contact-info">
                 <div class="contact-name">{{ contact.name }}</div>
                 <div class="contact-status" :class="contact.status">
@@ -55,7 +54,7 @@
         <!-- 聊天头部 -->
         <div class="chat-header">
           <div class="contact-info">
-            <el-avatar :size="40" :src="currentContact.avatar" />
+            <el-avatar :size="40" :src="defaultAvatar" />
             <div class="contact-details">
               <div class="contact-name">{{ currentContact.name }}</div>
               <div class="contact-status" :class="currentContact.status">
@@ -76,7 +75,7 @@
                :key="message.id" 
                class="message"
                :class="{ 'message-self': message.isSelf }">
-            <el-avatar :size="36" :src="message.isSelf ? userAvatar : currentContact.avatar" />
+            <el-avatar :size="36" :src="message.isSelf ? userAvatar : defaultAvatar" />
             <div class="message-content">
               <div class="message-text">{{ message.content }}</div>
               <div class="message-time">{{ message.time }}</div>
@@ -118,20 +117,21 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { Search, Phone, VideoCamera, More, Picture, Folder, ChatDotRound } from '@element-plus/icons-vue'
+import defaultAvatar from '../assets/avatar/1.jpg'
 
 const searchQuery = ref('')
 const activeTab = ref('recent')
 const currentContact = ref(null)
 const messageInput = ref('')
 const messageContainer = ref(null)
-const userAvatar = 'https://via.placeholder.com/40'
+const userAvatar = defaultAvatar
 
 // 模拟数据
 const recentContacts = ref([
   {
     id: 1,
     name: '客服小美',
-    avatar: 'https://via.placeholder.com/40',
+    avatar: '../assets/avatar/1.jpg',
     lastMessage: '您好，有什么可以帮您？',
     lastTime: '10:30',
     unread: 2,
@@ -140,7 +140,7 @@ const recentContacts = ref([
   {
     id: 2,
     name: '技术支持',
-    avatar: 'https://via.placeholder.com/40',
+    avatar: '../assets/avatar/1.jpg',
     lastMessage: '问题已经解决了吗？',
     lastTime: '昨天',
     unread: 0,
@@ -152,13 +152,13 @@ const onlineContacts = ref([
   {
     id: 1,
     name: '客服小美',
-    avatar: 'https://via.placeholder.com/40',
+    avatar: '../assets/avatar/1.jpg',
     status: 'online'
   },
   {
     id: 2,
     name: '技术支持',
-    avatar: 'https://via.placeholder.com/40',
+    avatar: '../assets/avatar/1.jpg',
     status: 'offline'
   }
 ])

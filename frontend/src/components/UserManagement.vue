@@ -203,8 +203,7 @@ const tableData = ref([
 
 // 方法
 const handleSearch = () => {
-  // 实现搜索逻辑
-  console.log('搜索:', searchQuery.value)
+  currentPage.value = 1
 }
 
 const handleAdd = () => {
@@ -236,7 +235,10 @@ const handleDelete = (row) => {
       type: 'warning',
     }
   ).then(() => {
-    // 实现删除逻辑
+    const index = tableData.value.findIndex(item => item.id === row.id)
+    if (index !== -1) {
+      tableData.value.splice(index, 1)
+    }
     ElMessage.success('删除成功')
   })
 }
@@ -251,7 +253,6 @@ const handleReset = (row) => {
       type: 'warning',
     }
   ).then(() => {
-    // 实现重置密码逻辑
     ElMessage.success('密码重置成功')
   })
 }
@@ -261,7 +262,25 @@ const handleSubmit = async () => {
   
   await formRef.value.validate((valid) => {
     if (valid) {
-      // 实现提交逻辑
+      if (dialogType.value === 'add') {
+        // 添加新用户
+        const newUser = {
+          id: Date.now(),
+          name: form.name,
+          email: form.email,
+          role: form.role,
+          status: form.status,
+          createTime: new Date().toLocaleString()
+        }
+        tableData.value.unshift(newUser)
+      } else {
+        // 编辑现有用户
+        const index = tableData.value.findIndex(item => item.id === form.id)
+        if (index !== -1) {
+          tableData.value[index] = { ...tableData.value[index], ...form }
+        }
+      }
+      
       ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功')
       dialogVisible.value = false
     }
@@ -270,12 +289,11 @@ const handleSubmit = async () => {
 
 const handleSizeChange = (val) => {
   pageSize.value = val
-  // 重新加载数据
+  currentPage.value = 1
 }
 
 const handleCurrentChange = (val) => {
   currentPage.value = val
-  // 重新加载数据
 }
 </script>
 

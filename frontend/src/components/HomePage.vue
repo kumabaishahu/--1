@@ -20,7 +20,7 @@
         <el-sub-menu index="1" style="background: transparent">
           <template #title>
             <el-icon><Monitor /></el-icon>
-            <span>智能驻场</span>
+            <span style="font-size: 18px">智能驻场</span>
           </template>
           <el-menu-item index="user-success" style="background: transparent">
             <el-icon><User /></el-icon>
@@ -38,7 +38,7 @@
         <el-sub-menu index="2" style="background: transparent">
           <template #title>
             <el-icon><Briefcase /></el-icon>
-            <span>我的工作台</span>
+            <span style="font-size: 18px">我的工作台</span>
           </template>
           <!-- 培训经理菜单 -->
           <template v-if="currentRole === 'manager'">
@@ -147,6 +147,7 @@ import { Monitor, Briefcase, User, Service, Tools, UserFilled, Reading, Document
 // 导入背景图片
 import slide1 from '../assets/slides/3.jpg'
 import slide2 from '../assets/slides/2.jpg'
+import defaultAvatar from '../assets/avatar/1.jpg'
 
 const router = useRouter()
 const route = useRoute()
