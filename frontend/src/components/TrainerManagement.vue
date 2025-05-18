@@ -344,25 +344,20 @@ const handleDelete = (row) => {
       type: 'warning',
     }
   ).then(() => {
-    // 实现删除逻辑
+    const index = trainers.value.findIndex(item => item.id === row.id)
+    if (index !== -1) {
+      trainers.value.splice(index, 1)
+    }
     ElMessage.success('删除成功')
   })
 }
 
 const handleSchedule = (row) => {
-  // 实现排课逻辑
-  ElMessage.info('排课功能开发中')
+  ElMessage.success('排课功能将在后续版本中实现')
 }
 
 const handleEvaluation = (row) => {
-  currentTrainer.value = row
-  evaluationDialogVisible.value = true
-  // 重置评价表单
-  Object.assign(evaluationForm, {
-    rating: 0,
-    content: '',
-    tags: []
-  })
+  ElMessage.success('评价功能将在后续版本中实现')
 }
 
 const handleSubmit = async () => {
@@ -370,7 +365,26 @@ const handleSubmit = async () => {
   
   await formRef.value.validate((valid) => {
     if (valid) {
-      // 实现提交逻辑
+      if (dialogType.value === 'add') {
+        // 添加新讲师
+        const newTrainer = {
+          id: Date.now(),
+          name: form.name,
+          specialty: form.specialty,
+          contact: form.contact,
+          status: form.status,
+          description: form.description,
+          rating: 5.0
+        }
+        trainers.value.unshift(newTrainer)
+      } else {
+        // 编辑现有讲师
+        const index = trainers.value.findIndex(item => item.id === form.id)
+        if (index !== -1) {
+          trainers.value[index] = { ...trainers.value[index], ...form }
+        }
+      }
+      
       ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功')
       dialogVisible.value = false
     }

@@ -148,6 +148,7 @@
 import { ref, reactive, onMounted, onActivated, onDeactivated } from 'vue'
 import { Download } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import Papa from 'papaparse'
 
 // 组件状态
 const isActive = ref(false)
@@ -263,8 +264,27 @@ const getStatusText = (status) => {
 }
 
 const handleFilter = () => {
-  // 实现筛选逻辑
-  console.log('筛选条件:', filterForm)
+  // 在前端实现筛选逻辑
+  const filtered = tableData.value.filter(item => {
+    const matchUser = !filterForm.user || 
+      item.userName.toLowerCase().includes(filterForm.user.toLowerCase()) ||
+      item.email?.toLowerCase().includes(filterForm.user.toLowerCase())
+    
+    const matchCourse = !filterForm.course || 
+      item.courseName.toLowerCase().includes(filterForm.course.toLowerCase())
+    
+    const matchStatus = !filterForm.status || 
+      item.status === filterForm.status
+    
+    const matchDate = !filterForm.dateRange?.length || (
+      new Date(item.lastStudyTime) >= new Date(filterForm.dateRange[0]) &&
+      new Date(item.lastStudyTime) <= new Date(filterForm.dateRange[1])
+    )
+    
+    return matchUser && matchCourse && matchStatus && matchDate
+  })
+  
+  tableData.value = filtered
 }
 
 const resetFilter = () => {
@@ -277,6 +297,22 @@ const resetFilter = () => {
 }
 
 const handleExport = () => {
+  // 在前端实现导出逻辑
+  const data = tableData.value.map(item => ({
+    用户名: item.userName,
+    课程名称: item.courseName,
+    学习进度: `${item.progress}%`,
+    状态: getStatusText(item.status),
+    最后学习时间: item.lastStudyTime,
+    总学习时长: item.totalTime
+  }))
+  
+  const csv = Papa.unparse(data)
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `学习记录_${new Date().toLocaleDateString()}.csv`
+  link.click()
   ElMessage.success('导出成功')
 }
 
@@ -295,19 +331,34 @@ const handleReset = (row) => {
       type: 'warning',
     }
   ).then(() => {
-    // 实现重置逻辑
+    const index = tableData.value.findIndex(item => item.id === row.id)
+    if (index !== -1) {
+      tableData.value[index] = {
+        ...tableData.value[index],
+        progress: 0,
+        status: 'not_started',
+        lastStudyTime: new Date().toLocaleString(),
+        totalTime: '0小时',
+        activities: [
+          {
+            time: new Date().toLocaleString(),
+            type: 'info',
+            content: '重置学习进度'
+          }
+        ]
+      }
+    }
     ElMessage.success('重置成功')
   })
 }
 
 const handleSizeChange = (val) => {
   pageSize.value = val
-  // 重新加载数据
+  currentPage.value = 1
 }
 
 const handleCurrentChange = (val) => {
   currentPage.value = val
-  // 重新加载数据
 }
 </script>
 
